@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b5cab" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="SnowTech" />
+  <title>SnowTech 旗門数計算</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <style>
+    :root{
+      --blue:#0b5cab; --blue2:#2587dc; --navy:#0a2f58; --green:#16834e;
+      --bg:#eef6fc; --card:#ffffff; --line:#d7e5f0; --text:#102030; --muted:#607286;
+      --shadow:0 10px 30px rgba(14,68,110,.12);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:linear-gradient(#e9f4fc,#f8fbfe);color:var(--text)}
+    .wrap{max-width:760px;margin:0 auto;padding:env(safe-area-inset-top) 14px calc(24px + env(safe-area-inset-bottom))}
+    header{padding:20px 8px 10px;text-align:center}
+    .brand{display:flex;align-items:center;justify-content:center;gap:12px}
+    .brand-mark{width:58px;height:58px}
+    .brand-name{font-weight:900;font-style:italic;font-size:42px;letter-spacing:-2px;color:var(--navy);line-height:1}.brand-name span{color:var(--blue2)}
+    .tag{font-size:12px;letter-spacing:3px;color:#42617f;margin-top:6px}
+    .card{background:rgba(255,255,255,.96);border:1px solid #dbe8f3;border-radius:24px;box-shadow:var(--shadow);margin-top:14px;overflow:hidden}
+    .input-card{padding:20px}
+    .input-title{font-weight:800;font-size:20px;margin-bottom:12px}
+    .input-row{display:grid;grid-template-columns:110px 1fr 42px;gap:10px;align-items:center}
+    .input-label{font-weight:800;font-size:20px;text-align:center}
+    #elevation{width:100%;font-size:48px;font-weight:900;text-align:center;padding:12px;border:2px solid #4ca0ef;border-radius:16px;outline:none;background:white;color:#0b2239}
+    .unit{font-size:24px;font-weight:800}
+    .results-title{padding:18px 18px 10px;font-size:22px;font-weight:900}
+    .sub{font-size:13px;color:var(--muted);font-weight:600;margin-top:4px}
+    table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed}
+    th,td{border-right:1px solid var(--line);border-top:1px solid var(--line);padding:16px 8px;text-align:center;vertical-align:middle}
+    th:last-child,td:last-child{border-right:0}
+    th{color:white;font-size:19px}.th-discipline{background:#284a68}.th-youth{background:linear-gradient(135deg,#0b4b9f,#146cd0)}.th-general{background:#344c61}
+    .discipline{font-weight:900;font-size:22px}.range-note{font-size:12px;color:var(--muted);margin-top:5px}.percent{font-size:15px;font-weight:800;margin-bottom:6px}.youth{color:#0d57b5}.general{color:var(--green)}
+    .result{font-weight:900;font-size:30px;letter-spacing:1px}.out{letter-spacing:6px}.out-note{font-size:12px;font-weight:800;margin-top:4px}
+    .info{margin:14px;padding:12px 14px;border-radius:14px;background:#f4f8fb;color:#31506b;font-size:13px;border:1px solid #e0ebf3}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 14px}
+    button{border:0;border-radius:14px;padding:14px;font-size:16px;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:white}.secondary{background:#edf4f9;color:#183c5d;border:1px solid #d3e2ee}
+    dialog{width:min(94vw,620px);border:0;border-radius:22px;padding:0;box-shadow:0 20px 70px rgba(0,0,0,.25)}dialog::backdrop{background:rgba(0,25,45,.5)}
+    .settings-head{padding:18px 20px;background:#0b5cab;color:white;font-size:22px;font-weight:900}
+    .settings-body{padding:16px 18px;max-height:70vh;overflow:auto}.settings-section{margin-bottom:18px}.settings-section h3{margin:0 0 8px;font-size:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{font-size:12px;color:var(--muted);font-weight:700}.field input{width:100%;padding:10px;border:1px solid #cbdce8;border-radius:10px;font-size:16px;margin-top:4px}
+    .settings-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 18px 18px}
+    footer{text-align:center;color:#7c91a5;font-size:11px;padding:18px 0 2px}
+    @media (max-width:520px){.brand-name{font-size:34px}.brand-mark{width:48px;height:48px}.input-row{grid-template-columns:86px 1fr 32px}.input-label{font-size:17px}#elevation{font-size:40px}.discipline{font-size:17px}.result{font-size:25px}.percent{font-size:13px}th{font-size:16px}th,td{padding:14px 5px}.range-note{font-size:11px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M4 76 35 26 49 46 63 17 96 76 67 55 55 71 39 49 24 74Z" fill="#0b5cab"/>
+        <circle cx="26" cy="68" r="7" fill="#102f55"/>
+        <path d="M27 73c11 0 17-11 23-17M26 72l-12 12M32 75l20 8" stroke="#102f55" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <div><div class="brand-name">Snow<span>Tech</span></div><div class="tag">SKI FOR A BETTER TOMORROW</div></div>
+    </div>
+  </header>
+
+  <section class="card input-card">
+    <div class="input-title">標高差を入力してください</div>
+    <div class="input-row">
+      <div class="input-label">標高差</div>
+      <input id="elevation" inputmode="decimal" type="number" min="0" step="1" placeholder="250" />
+      <div class="unit">m</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="results-title">旗門数（方向転換数）<div class="sub">標高差に応じてユース・一般の規定範囲を表示します。</div></div>
+    <table>
+      <thead><tr><th class="th-discipline">種目</th><th class="th-youth">ユース</th><th class="th-general">一般</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="info">「ーーー」は、入力した標高差がその区分の規定範囲外であることを示します。</div>
+    <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
+  </section>
+  <footer>SnowTech Gate Calculator</footer>
+</div>
+
+<dialog id="settingsDialog">
+  <div class="settings-head">設定</div>
+  <div class="settings-body" id="settingsBody"></div>
+  <div class="settings-actions"><button class="secondary" id="resetBtn">初期値に戻す</button><button class="secondary" id="cancelBtn">閉じる</button><button class="primary" id="saveBtn">保存</button></div>
+</dialog>
+
+<script>
+const DEFAULTS = {
+  SL:{name:'回転（SL）', youth:{minElev:100,maxElev:160,minPct:30,maxPct:35,plusMinus:3}, generalMale:{minElev:180,maxElev:220,minPct:30,maxPct:35,plusMinus:3}, generalFemale:{minElev:140,maxElev:220,minPct:30,maxPct:35,plusMinus:3}},
+  GS:{name:'大回転（GS）', youth:{minElev:200,maxElev:350,minPct:13,maxPct:18,plusMinus:0}, generalMale:{minElev:250,maxElev:450,minPct:11,maxPct:15,plusMinus:0}, generalFemale:{minElev:250,maxElev:400,minPct:11,maxPct:15,plusMinus:0}},
+  SG:{name:'スーパー大回転（SG）', youth:{minElev:250,maxElev:450,minPct:8,maxPct:12,plusMinus:0}, generalMale:{minElev:500,maxElev:650,minPct:8,maxPct:10,plusMinus:0}, generalFemale:{minElev:400,maxElev:600,minPct:8,maxPct:10,plusMinus:0}}
+};
+const STORAGE_KEY='snowtech-config';
+let config = loadConfig();
+const elevation = document.getElementById('elevation'); const tbody=document.getElementById('tbody');
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function loadConfig(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    // v1.4: structure changed to male/female general elevation ranges.
+    if(saved && saved.SL?.generalMale && saved.SL?.generalFemale) return saved;
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function saveConfig(){localStorage.setItem('snowtech-config',JSON.stringify(config))}
+function fmtRange(c,e){if(!e || e<c.minElev || e>c.maxElev) return null; const pm=Number(c.plusMinus)||0; const lo=Math.ceil(e*c.minPct/100)-pm; const hi=Math.floor(e*c.maxPct/100)+pm; return [lo,hi]}
+function fmtGeneral(d,e){const m=fmtRange(d.generalMale,e); const f=fmtRange(d.generalFemale,e); return m||f;}
+function pctText(c){return `${c.minPct}%〜${c.maxPct}%${c.plusMinus?`（±${c.plusMinus}）`:''}`}
+function pctTextGeneral(d){const m=pctText(d.generalMale), f=pctText(d.generalFemale); return m===f?m:`男子 ${m} / 女子 ${f}`}
+function render(){const e=Number(elevation.value); tbody.innerHTML=''; ['SL','GS','SG'].forEach(k=>{const d=config[k]; const y=fmtRange(d.youth,e); const g=fmtGeneral(d,e); const tr=document.createElement('tr'); tr.innerHTML=`<td><div class="discipline">${d.name}</div><div class="range-note">ユース ${d.youth.minElev}〜${d.youth.maxElev}m ／ 一般 男子 ${d.generalMale.minElev}〜${d.generalMale.maxElev}m・女子 ${d.generalFemale.minElev}〜${d.generalFemale.maxElev}m</div></td>
+<td class="youth"><div class="percent">${pctText(d.youth)}</div>${y?`<div class="result">${y[0]}〜${y[1]}</div><div class="out-note">旗門</div>`:`<div class="result out">ーーー</div><div class="out-note">規定外</div>`}</td>
+<td class="general"><div class="percent">${pctTextGeneral(d)}</div>${g?`<div class="result">${g[0]}〜${g[1]}</div><div class="out-note">旗門</div>`:`<div class="result out">ーーー</div><div class="out-note">規定外</div>`}</td>`; tbody.appendChild(tr);});}
+function settingsHtml(){return ['SL','GS','SG'].map(k=>{const d=config[k]; return `<div class="settings-section"><h3>${d.name}</h3><div class="grid">${['youth','generalMale','generalFemale'].map(cat=>{const c=d[cat],label=cat==='youth'?'ユース':(cat==='generalMale'?'一般・男子':'一般・女子');return `<div><strong>${label}</strong><div class="grid"><div class="field"><label>標高差 最小(m)</label><input data-k="${k}" data-cat="${cat}" data-f="minElev" type="number" value="${c.minElev}"></div><div class="field"><label>標高差 最大(m)</label><input data-k="${k}" data-cat="${cat}" data-f="maxElev" type="number" value="${c.maxElev}"></div><div class="field"><label>最小(%)</label><input data-k="${k}" data-cat="${cat}" data-f="minPct" type="number" step="0.1" value="${c.minPct}"></div><div class="field"><label>最大(%)</label><input data-k="${k}" data-cat="${cat}" data-f="maxPct" type="number" step="0.1" value="${c.maxPct}"></div><div class="field"><label>±補足</label><input data-k="${k}" data-cat="${cat}" data-f="plusMinus" type="number" step="1" value="${c.plusMinus}"></div></div></div>`}).join('')}</div></div>`}).join('')}
+const dlg=document.getElementById('settingsDialog'); document.getElementById('settingsBtn').onclick=()=>{document.getElementById('settingsBody').innerHTML=settingsHtml();dlg.showModal()};
+document.getElementById('cancelBtn').onclick=()=>dlg.close();
+document.getElementById('saveBtn').onclick=()=>{document.querySelectorAll('#settingsBody input').forEach(i=>{config[i.dataset.k][i.dataset.cat][i.dataset.f]=Number(i.value)});saveConfig();render();dlg.close()};
+document.getElementById('resetBtn').onclick=()=>{config=clone(DEFAULTS);saveConfig();document.getElementById('settingsBody').innerHTML=settingsHtml();render()};
+document.getElementById('clearBtn').onclick=()=>{elevation.value='';render();elevation.focus()};
+elevation.addEventListener('input',render); render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+</script>
+</body></html>
