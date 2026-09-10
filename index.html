@@ -26,6 +26,16 @@
     .tag{font-size:12px;letter-spacing:3px;color:#42617f;margin-top:6px}
     .card{background:rgba(255,255,255,.96);border:1px solid #dbe8f3;border-radius:24px;box-shadow:var(--shadow);margin-top:14px;overflow:hidden}
     .input-card{padding:20px}
+    .gps-box{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+    .gps-title{font-size:16px;font-weight:900;margin-bottom:10px}
+    .gps-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .gps-point{background:#f6f9fc;border:1px solid #dce8f1;border-radius:14px;padding:12px}
+    .gps-point strong{display:block;font-size:15px;margin-bottom:6px}
+    .gps-alt{font-size:25px;font-weight:900;color:var(--navy);min-height:34px}
+    .gps-meta{font-size:11px;color:var(--muted);min-height:16px;margin:3px 0 9px}
+    .gps-btn{width:100%;padding:11px;font-size:14px;background:#e7f2fb;color:#0b4b82;border:1px solid #c8deef}
+    .gps-diff{margin-top:10px;padding:10px 12px;border-radius:12px;background:#eef7ff;border:1px solid #d1e6f7;font-size:13px;font-weight:700;color:#214a6c}
+    .gps-status{margin-top:8px;font-size:12px;color:var(--muted)}
     .input-title{font-weight:800;font-size:20px;margin-bottom:12px}
     .input-row{display:grid;grid-template-columns:110px 1fr 42px;gap:10px;align-items:center}
     .input-label{font-weight:800;font-size:20px;text-align:center}
@@ -70,6 +80,25 @@
       <input id="elevation" inputmode="decimal" type="number" min="0" step="1" placeholder="250" />
       <div class="unit">m</div>
     </div>
+    <div class="gps-box">
+      <div class="gps-title">GPSから標高差を取得</div>
+      <div class="gps-grid">
+        <div class="gps-point">
+          <strong>スタート地点</strong>
+          <div class="gps-alt" id="startAlt">未取得</div>
+          <div class="gps-meta" id="startMeta"></div>
+          <button class="gps-btn" id="startGpsBtn">現在地を取得</button>
+        </div>
+        <div class="gps-point">
+          <strong>ゴール地点</strong>
+          <div class="gps-alt" id="goalAlt">未取得</div>
+          <div class="gps-meta" id="goalMeta"></div>
+          <button class="gps-btn" id="goalGpsBtn">現在地を取得</button>
+        </div>
+      </div>
+      <div class="gps-diff" id="gpsDiff">スタートとゴールを取得すると、標高差を自動入力します。</div>
+      <div class="gps-status" id="gpsStatus">※GPS標高は端末・受信状況により誤差が出ます。手入力も引き続き使用できます。</div>
+    </div>
   </section>
 
   <section class="card">
@@ -81,7 +110,7 @@
     <div class="info">「ーーー」は、入力した標高差がその区分の規定範囲外であることを示します。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>SnowTech Gate Calculator</footer>
+  <footer>SnowTech Gate Calculator v1.5</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -117,11 +146,63 @@ function render(){const e=Number(elevation.value); tbody.innerHTML=''; ['SL','GS
 <td class="youth"><div class="percent">${pctText(d.youth)}</div>${y?`<div class="result">${y[0]}〜${y[1]}</div><div class="out-note">旗門</div>`:`<div class="result out">ーーー</div><div class="out-note">規定外</div>`}</td>
 <td class="general"><div class="percent">${pctTextGeneral(d)}</div>${g?`<div class="result">${g[0]}〜${g[1]}</div><div class="out-note">旗門</div>`:`<div class="result out">ーーー</div><div class="out-note">規定外</div>`}</td>`; tbody.appendChild(tr);});}
 function settingsHtml(){return ['SL','GS','SG'].map(k=>{const d=config[k]; return `<div class="settings-section"><h3>${d.name}</h3><div class="grid">${['youth','generalMale','generalFemale'].map(cat=>{const c=d[cat],label=cat==='youth'?'ユース':(cat==='generalMale'?'一般・男子':'一般・女子');return `<div><strong>${label}</strong><div class="grid"><div class="field"><label>標高差 最小(m)</label><input data-k="${k}" data-cat="${cat}" data-f="minElev" type="number" value="${c.minElev}"></div><div class="field"><label>標高差 最大(m)</label><input data-k="${k}" data-cat="${cat}" data-f="maxElev" type="number" value="${c.maxElev}"></div><div class="field"><label>最小(%)</label><input data-k="${k}" data-cat="${cat}" data-f="minPct" type="number" step="0.1" value="${c.minPct}"></div><div class="field"><label>最大(%)</label><input data-k="${k}" data-cat="${cat}" data-f="maxPct" type="number" step="0.1" value="${c.maxPct}"></div><div class="field"><label>±補足</label><input data-k="${k}" data-cat="${cat}" data-f="plusMinus" type="number" step="1" value="${c.plusMinus}"></div></div></div>`}).join('')}</div></div>`}).join('')}
+
+let startGpsAltitude=null, goalGpsAltitude=null;
+const startAltEl=document.getElementById('startAlt');
+const goalAltEl=document.getElementById('goalAlt');
+const startMetaEl=document.getElementById('startMeta');
+const goalMetaEl=document.getElementById('goalMeta');
+const gpsDiffEl=document.getElementById('gpsDiff');
+const gpsStatusEl=document.getElementById('gpsStatus');
+function updateGpsDifference(){
+  if(startGpsAltitude===null || goalGpsAltitude===null){
+    gpsDiffEl.textContent='スタートとゴールを取得すると、標高差を自動入力します。';
+    return;
+  }
+  const diff=Math.round(Math.abs(startGpsAltitude-goalGpsAltitude));
+  gpsDiffEl.textContent=`GPS標高差：${diff} m（スタート ${Math.round(startGpsAltitude)} m − ゴール ${Math.round(goalGpsAltitude)} m）`;
+  elevation.value=diff;
+  render();
+}
+function getGpsAltitude(which){
+  if(!navigator.geolocation){
+    gpsStatusEl.textContent='この端末・ブラウザでは位置情報を利用できません。';
+    return;
+  }
+  const btn=document.getElementById(which==='start'?'startGpsBtn':'goalGpsBtn');
+  const altEl=which==='start'?startAltEl:goalAltEl;
+  const metaEl=which==='start'?startMetaEl:goalMetaEl;
+  btn.disabled=true; btn.textContent='取得中…'; gpsStatusEl.textContent='GPSを取得しています…';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    btn.disabled=false; btn.textContent='現在地を再取得';
+    const c=pos.coords;
+    if(c.altitude===null || !Number.isFinite(c.altitude)){
+      altEl.textContent='取得不可';
+      metaEl.textContent=`位置精度 ±${Math.round(c.accuracy)}m`;
+      gpsStatusEl.textContent='位置情報は取得できましたが、この端末から標高値が返されませんでした。標高差は手入力してください。';
+      return;
+    }
+    const a=c.altitude;
+    altEl.textContent=`${Math.round(a)} m`;
+    const acc=c.altitudeAccuracy;
+    metaEl.textContent=Number.isFinite(acc)?`標高精度 ±${Math.round(acc)}m`:`位置精度 ±${Math.round(c.accuracy)}m`;
+    if(which==='start') startGpsAltitude=a; else goalGpsAltitude=a;
+    gpsStatusEl.textContent='GPS標高を取得しました。';
+    updateGpsDifference();
+  },err=>{
+    btn.disabled=false; btn.textContent='現在地を取得';
+    const msg=err.code===1?'位置情報の使用が許可されていません。iPhoneの設定でSafariの位置情報を許可してください。':err.code===2?'現在地を取得できませんでした。屋外で再度お試しください。':'GPS取得がタイムアウトしました。再度お試しください。';
+    gpsStatusEl.textContent=msg;
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+document.getElementById('startGpsBtn').onclick=()=>getGpsAltitude('start');
+document.getElementById('goalGpsBtn').onclick=()=>getGpsAltitude('goal');
+
 const dlg=document.getElementById('settingsDialog'); document.getElementById('settingsBtn').onclick=()=>{document.getElementById('settingsBody').innerHTML=settingsHtml();dlg.showModal()};
 document.getElementById('cancelBtn').onclick=()=>dlg.close();
 document.getElementById('saveBtn').onclick=()=>{document.querySelectorAll('#settingsBody input').forEach(i=>{config[i.dataset.k][i.dataset.cat][i.dataset.f]=Number(i.value)});saveConfig();render();dlg.close()};
 document.getElementById('resetBtn').onclick=()=>{config=clone(DEFAULTS);saveConfig();document.getElementById('settingsBody').innerHTML=settingsHtml();render()};
-document.getElementById('clearBtn').onclick=()=>{elevation.value='';render();elevation.focus()};
+document.getElementById('clearBtn').onclick=()=>{elevation.value='';startGpsAltitude=null;goalGpsAltitude=null;startAltEl.textContent='未取得';goalAltEl.textContent='未取得';startMetaEl.textContent='';goalMetaEl.textContent='';gpsStatusEl.textContent='※GPS標高は端末・受信状況により誤差が出ます。手入力も引き続き使用できます。';updateGpsDifference();render();elevation.focus()};
 elevation.addEventListener('input',render); render();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 </script>
