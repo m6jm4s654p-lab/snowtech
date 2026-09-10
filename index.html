@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="SnowTech" />
-  <title>SnowTech 旗門数計算</title>
+  <title>SnowTech 方向転換数計算</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <style>
@@ -102,15 +102,15 @@
   </section>
 
   <section class="card">
-    <div class="results-title">旗門数（方向転換数）<div class="sub">標高差に応じてユース・一般の規定範囲を表示します。</div></div>
+    <div class="results-title">方向転換数<div class="sub">標高差に応じてユース・一般の規定範囲を表示します。</div></div>
     <table>
       <thead><tr><th class="th-discipline">種目</th><th class="th-youth">ユース</th><th class="th-general">一般</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
-    <div class="info">「ーーー」は、入力した標高差がその区分の規定範囲外であることを示します。</div>
+    <div class="info">「ーーー」は標高差が規定範囲外であることを示します。一般SGはFISレベル基準の「7%以上」のため、上限ではなく最低方向転換数を表示します。基準：FIS ICR July 2026。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>SnowTech Gate Calculator v1.5</footer>
+  <footer>SnowTech Gate Calculator v1.6</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -121,11 +121,26 @@
 
 <script>
 const DEFAULTS = {
-  SL:{name:'回転（SL）', youth:{minElev:100,maxElev:160,minPct:30,maxPct:35,plusMinus:3}, generalMale:{minElev:180,maxElev:220,minPct:30,maxPct:35,plusMinus:3}, generalFemale:{minElev:140,maxElev:220,minPct:30,maxPct:35,plusMinus:3}},
-  GS:{name:'大回転（GS）', youth:{minElev:200,maxElev:350,minPct:13,maxPct:18,plusMinus:0}, generalMale:{minElev:250,maxElev:450,minPct:11,maxPct:15,plusMinus:0}, generalFemale:{minElev:250,maxElev:400,minPct:11,maxPct:15,plusMinus:0}},
-  SG:{name:'スーパー大回転（SG）', youth:{minElev:250,maxElev:450,minPct:8,maxPct:12,plusMinus:0}, generalMale:{minElev:500,maxElev:650,minPct:8,maxPct:10,plusMinus:0}, generalFemale:{minElev:400,maxElev:600,minPct:8,maxPct:10,plusMinus:0}}
+  SL:{
+    name:'回転（SL）',
+    youth:{minElev:100,maxElev:160,minPct:32,maxPct:38,plusMinus:3,rule:'range'},
+    generalMale:{minElev:140,maxElev:220,minPct:30,maxPct:35,plusMinus:3,rule:'range'},
+    generalFemale:{minElev:120,maxElev:200,minPct:30,maxPct:35,plusMinus:3,rule:'range'}
+  },
+  GS:{
+    name:'大回転（GS）',
+    youth:{minElev:200,maxElev:350,minPct:13,maxPct:18,plusMinus:0,rule:'range'},
+    generalMale:{minElev:250,maxElev:450,minPct:11,maxPct:15,plusMinus:0,rule:'range'},
+    generalFemale:{minElev:250,maxElev:400,minPct:11,maxPct:15,plusMinus:0,rule:'range'}
+  },
+  SG:{
+    name:'スーパー大回転（SG）',
+    youth:{minElev:250,maxElev:450,minPct:8,maxPct:12,plusMinus:0,rule:'range'},
+    generalMale:{minElev:350,maxElev:650,minPct:7,maxPct:null,plusMinus:0,rule:'minimum'},
+    generalFemale:{minElev:350,maxElev:600,minPct:7,maxPct:null,plusMinus:0,rule:'minimum'}
+  }
 };
-const STORAGE_KEY='snowtech-config';
+const STORAGE_KEY='snowtech-config-v1.6';
 let config = loadConfig();
 const elevation = document.getElementById('elevation'); const tbody=document.getElementById('tbody');
 function clone(o){return JSON.parse(JSON.stringify(o))}
@@ -138,15 +153,75 @@ function loadConfig(){
   return JSON.parse(JSON.stringify(DEFAULTS));
 }
 function saveConfig(){localStorage.setItem('snowtech-config',JSON.stringify(config))}
-function fmtRange(c,e){if(!e || e<c.minElev || e>c.maxElev) return null; const pm=Number(c.plusMinus)||0; const lo=Math.ceil(e*c.minPct/100)-pm; const hi=Math.floor(e*c.maxPct/100)+pm; return [lo,hi]}
-function fmtGeneral(d,e){const m=fmtRange(d.generalMale,e); const f=fmtRange(d.generalFemale,e); return m||f;}
-function pctText(c){return `${c.minPct}%〜${c.maxPct}%${c.plusMinus?`（±${c.plusMinus}）`:''}`}
-function pctTextGeneral(d){const m=pctText(d.generalMale), f=pctText(d.generalFemale); return m===f?m:`男子 ${m} / 女子 ${f}`}
-function render(){const e=Number(elevation.value); tbody.innerHTML=''; ['SL','GS','SG'].forEach(k=>{const d=config[k]; const y=fmtRange(d.youth,e); const g=fmtGeneral(d,e); const tr=document.createElement('tr'); tr.innerHTML=`<td><div class="discipline">${d.name}</div><div class="range-note">ユース ${d.youth.minElev}〜${d.youth.maxElev}m ／ 一般 男子 ${d.generalMale.minElev}〜${d.generalMale.maxElev}m・女子 ${d.generalFemale.minElev}〜${d.generalFemale.maxElev}m</div></td>
-<td class="youth"><div class="percent">${pctText(d.youth)}</div>${y?`<div class="result">${y[0]}〜${y[1]}</div><div class="out-note">旗門</div>`:`<div class="result out">ーーー</div><div class="out-note">規定外</div>`}</td>
-<td class="general"><div class="percent">${pctTextGeneral(d)}</div>${g?`<div class="result">${g[0]}〜${g[1]}</div><div class="out-note">旗門</div>`:`<div class="result out">ーーー</div><div class="out-note">規定外</div>`}</td>`; tbody.appendChild(tr);});}
-function settingsHtml(){return ['SL','GS','SG'].map(k=>{const d=config[k]; return `<div class="settings-section"><h3>${d.name}</h3><div class="grid">${['youth','generalMale','generalFemale'].map(cat=>{const c=d[cat],label=cat==='youth'?'ユース':(cat==='generalMale'?'一般・男子':'一般・女子');return `<div><strong>${label}</strong><div class="grid"><div class="field"><label>標高差 最小(m)</label><input data-k="${k}" data-cat="${cat}" data-f="minElev" type="number" value="${c.minElev}"></div><div class="field"><label>標高差 最大(m)</label><input data-k="${k}" data-cat="${cat}" data-f="maxElev" type="number" value="${c.maxElev}"></div><div class="field"><label>最小(%)</label><input data-k="${k}" data-cat="${cat}" data-f="minPct" type="number" step="0.1" value="${c.minPct}"></div><div class="field"><label>最大(%)</label><input data-k="${k}" data-cat="${cat}" data-f="maxPct" type="number" step="0.1" value="${c.maxPct}"></div><div class="field"><label>±補足</label><input data-k="${k}" data-cat="${cat}" data-f="plusMinus" type="number" step="1" value="${c.plusMinus}"></div></div></div>`}).join('')}</div></div>`}).join('')}
-
+function calcRule(c,e){
+  if(!Number.isFinite(e) || e<=0 || e<c.minElev || e>c.maxElev) return null;
+  const pm=Number(c.plusMinus)||0;
+  const lo=Math.ceil(e*Number(c.minPct)/100)-pm;
+  if(c.rule==='minimum' || c.maxPct===null || c.maxPct===''){
+    return {type:'minimum',lo};
+  }
+  const hi=Math.floor(e*Number(c.maxPct)/100)+pm;
+  return {type:'range',lo,hi};
+}
+function pctText(c){
+  if(c.rule==='minimum' || c.maxPct===null || c.maxPct===''){
+    return `${c.minPct}%以上`;
+  }
+  return `${c.minPct}%〜${c.maxPct}%${c.plusMinus?`（±${c.plusMinus}）`:''}`;
+}
+function resultText(r){
+  if(!r) return null;
+  return r.type==='minimum' ? `最低 ${r.lo}` : `${r.lo}〜${r.hi}`;
+}
+function calcGeneral(d,e){
+  const m=calcRule(d.generalMale,e);
+  const f=calcRule(d.generalFemale,e);
+  return {m,f};
+}
+function pctTextGeneral(d){
+  const m=pctText(d.generalMale), f=pctText(d.generalFemale);
+  return m===f?m:`男子 ${m} / 女子 ${f}`;
+}
+function generalResultHtml(d,e){
+  const {m,f}=calcGeneral(d,e);
+  if(!m && !f){
+    return `<div class="result out">ーーー</div><div class="out-note">規定外</div>`;
+  }
+  const mt=m?resultText(m):'ーーー';
+  const ft=f?resultText(f):'ーーー';
+  if(mt===ft){
+    return `<div class="result">${mt}</div><div class="out-note">方向転換</div>`;
+  }
+  return `<div class="result" style="font-size:22px">男子 ${mt}<br>女子 ${ft}</div><div class="out-note">方向転換</div>`;
+}
+function render(){
+  const e=Number(elevation.value);
+  tbody.innerHTML='';
+  ['SL','GS','SG'].forEach(k=>{
+    const d=config[k];
+    const y=calcRule(d.youth,e);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><div class="discipline">${d.name}</div><div class="range-note">ユース ${d.youth.minElev}〜${d.youth.maxElev}m ／ 一般 男子 ${d.generalMale.minElev}〜${d.generalMale.maxElev}m・女子 ${d.generalFemale.minElev}〜${d.generalFemale.maxElev}m</div></td>
+<td class="youth"><div class="percent">${pctText(d.youth)}</div>${y?`<div class="result">${resultText(y)}</div><div class="out-note">方向転換</div>`:`<div class="result out">ーーー</div><div class="out-note">規定外</div>`}</td>
+<td class="general"><div class="percent">${pctTextGeneral(d)}</div>${generalResultHtml(d,e)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function settingsHtml(){
+  return ['SL','GS','SG'].map(k=>{
+    const d=config[k];
+    return `<div class="settings-section"><h3>${d.name}</h3><div class="grid">${['youth','generalMale','generalFemale'].map(cat=>{
+      const c=d[cat],label=cat==='youth'?'ユース':(cat==='generalMale'?'一般・男子':'一般・女子');
+      return `<div><strong>${label}</strong><div class="grid">
+        <div class="field"><label>標高差 最小(m)</label><input data-k="${k}" data-cat="${cat}" data-f="minElev" type="number" value="${c.minElev}"></div>
+        <div class="field"><label>標高差 最大(m)</label><input data-k="${k}" data-cat="${cat}" data-f="maxElev" type="number" value="${c.maxElev}"></div>
+        <div class="field"><label>最小(%)</label><input data-k="${k}" data-cat="${cat}" data-f="minPct" type="number" step="0.1" value="${c.minPct}"></div>
+        <div class="field"><label>最大(%) ※最低のみは空欄</label><input data-k="${k}" data-cat="${cat}" data-f="maxPct" type="number" step="0.1" value="${c.maxPct??''}"></div>
+        <div class="field"><label>±補足</label><input data-k="${k}" data-cat="${cat}" data-f="plusMinus" type="number" step="1" value="${c.plusMinus}"></div>
+      </div></div>`
+    }).join('')}</div></div>`
+  }).join('')
+}
 let startGpsAltitude=null, goalGpsAltitude=null;
 const startAltEl=document.getElementById('startAlt');
 const goalAltEl=document.getElementById('goalAlt');
@@ -200,7 +275,18 @@ document.getElementById('goalGpsBtn').onclick=()=>getGpsAltitude('goal');
 
 const dlg=document.getElementById('settingsDialog'); document.getElementById('settingsBtn').onclick=()=>{document.getElementById('settingsBody').innerHTML=settingsHtml();dlg.showModal()};
 document.getElementById('cancelBtn').onclick=()=>dlg.close();
-document.getElementById('saveBtn').onclick=()=>{document.querySelectorAll('#settingsBody input').forEach(i=>{config[i.dataset.k][i.dataset.cat][i.dataset.f]=Number(i.value)});saveConfig();render();dlg.close()};
+document.getElementById('saveBtn').onclick=()=>{
+  document.querySelectorAll('#settingsBody input').forEach(i=>{
+    const target=config[i.dataset.k][i.dataset.cat];
+    if(i.dataset.f==='maxPct'){
+      target.maxPct=i.value.trim()===''?null:Number(i.value);
+      target.rule=target.maxPct===null?'minimum':'range';
+    }else{
+      target[i.dataset.f]=Number(i.value);
+    }
+  });
+  saveConfig();render();dlg.close()
+};
 document.getElementById('resetBtn').onclick=()=>{config=clone(DEFAULTS);saveConfig();document.getElementById('settingsBody').innerHTML=settingsHtml();render()};
 document.getElementById('clearBtn').onclick=()=>{elevation.value='';startGpsAltitude=null;goalGpsAltitude=null;startAltEl.textContent='未取得';goalAltEl.textContent='未取得';startMetaEl.textContent='';goalMetaEl.textContent='';gpsStatusEl.textContent='※GPS標高は端末・受信状況により誤差が出ます。手入力も引き続き使用できます。';updateGpsDifference();render();elevation.focus()};
 elevation.addEventListener('input',render); render();
