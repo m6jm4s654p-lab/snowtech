@@ -72,7 +72,7 @@
 </style>
 </head>
 <body>
-<div class="version-badge">v1.13</div>
+<div class="version-badge">v1.14</div>
 <div class="wrap">
   <header>
     <div class="brand">
@@ -129,7 +129,7 @@
     <div class="info">「ーーー」は標高差が規定範囲外であることを示します。一般SGはFISレベル基準の「7%以上」のため、上限ではなく最低方向転換数を表示します。基準：FIS ICR July 2026。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>SnowTech Gate Calculator v1.13</footer>
+  <footer>SnowTech Gate Calculator v1.14</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -137,6 +137,8 @@
   <div class="settings-body" id="settingsBody"></div>
   <div class="settings-actions"><button class="secondary" id="resetBtn">初期値に戻す</button><button class="secondary" id="cancelBtn">閉じる</button><button class="primary" id="saveBtn">保存</button></div>
 </dialog>
+
+<div id="gpsHistoryDialog" class="history-overlay" aria-hidden="true"><div class="history-sheet"><div class="history-modal-head"><div class="history-modal-title">取得済みの標高差</div><button id="closeGpsHistory" class="history-close" type="button">閉じる</button></div><div id="gpsHistory"></div><div class="history-modal-foot"><button id="clearGpsHistory" class="history-clear" type="button">履歴を消去</button></div></div></div>
 
 <script>
 const DEFAULTS = {
@@ -253,8 +255,12 @@ const DEMO_GPS_HISTORY=[
 function ensureDemoGpsHistory(){
   try{
     const v=JSON.parse(localStorage.getItem(GPS_HISTORY_KEY)||'[]');
-    if(!Array.isArray(v)||v.length===0) localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(DEMO_GPS_HISTORY));
-  }catch(e){localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(DEMO_GPS_HISTORY));}
+    if(!Array.isArray(v) || v.length===0){
+      localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(DEMO_GPS_HISTORY));
+    }
+  }catch(e){
+    localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(DEMO_GPS_HISTORY));
+  }
 }
 
 function loadGpsHistory(){try{const v=JSON.parse(localStorage.getItem(GPS_HISTORY_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
@@ -346,8 +352,8 @@ const gpsHistoryDialog=document.getElementById('gpsHistoryDialog');
 const openGpsHistoryBtn=document.getElementById('openGpsHistory');
 const closeGpsHistoryBtn=document.getElementById('closeGpsHistory');
 const clearGpsHistoryBtn=document.getElementById('clearGpsHistory');
-function openGpsHistory(){renderGpsHistory();gpsHistoryDialog.classList.add('open');gpsHistoryDialog.setAttribute('aria-hidden','false');}
-function closeGpsHistory(){gpsHistoryDialog.classList.remove('open');gpsHistoryDialog.setAttribute('aria-hidden','true');}
+function openGpsHistory(){renderGpsHistory();if(!gpsHistoryDialog)return;gpsHistoryDialog.classList.add('open');gpsHistoryDialog.setAttribute('aria-hidden','false');}
+function closeGpsHistory(){if(!gpsHistoryDialog)return;gpsHistoryDialog.classList.remove('open');gpsHistoryDialog.setAttribute('aria-hidden','true');}
 if(openGpsHistoryBtn) openGpsHistoryBtn.addEventListener('click',openGpsHistory);
 if(closeGpsHistoryBtn) closeGpsHistoryBtn.addEventListener('click',closeGpsHistory);
 if(clearGpsHistoryBtn) clearGpsHistoryBtn.addEventListener('click',()=>{localStorage.removeItem(GPS_HISTORY_KEY);renderGpsHistory();});
@@ -358,5 +364,4 @@ renderGpsHistory();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 </script>
 
-<div id="gpsHistoryDialog" class="history-overlay" aria-hidden="true"><div class="history-sheet"><div class="history-modal-head"><div class="history-modal-title">取得済みの標高差</div><button id="closeGpsHistory" class="history-close" type="button">閉じる</button></div><div id="gpsHistory"></div><div class="history-modal-foot"><button id="clearGpsHistory" class="history-clear" type="button">履歴を消去</button></div></div></div>
 </body></html>
