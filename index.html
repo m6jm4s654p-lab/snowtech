@@ -61,10 +61,34 @@
   
 
 
-.saved-elev-wrap{margin:8px 0 14px}.saved-elev-btn{width:100%;border:0;border-radius:12px;padding:12px 14px;background:#eef5fc;color:#174f80;font-weight:800;font-size:14px;box-shadow:inset 0 0 0 1px #d6e6f5}.history-modal{border:0;border-radius:18px;padding:0;width:min(92vw,460px);box-shadow:0 18px 55px rgba(0,0,0,.25);overflow:hidden}.history-modal::backdrop{background:rgba(10,28,48,.45)}.history-modal-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #e4edf6;background:#f8fbff}.history-modal-title{font-weight:900;color:#123d69}.history-close,.history-clear{border:0;border-radius:10px;padding:8px 10px;font-weight:800;font-size:12px}.history-close{background:#e9f1f8;color:#204c72}.history-clear{background:#f3f5f7;color:#556979}.history-list{display:grid;gap:8px;padding:12px}.history-empty{padding:18px;color:#6c7f92;font-size:13px}.history-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#f7fbff;border:1px solid #dceafb;border-radius:12px;padding:10px 12px}.history-value{font-size:20px;font-weight:900;color:#0d4f8b}.history-meta{font-size:11px;color:#73879a;margin-top:2px}.history-use{border:0;border-radius:10px;padding:8px 10px;background:#1769aa;color:white;font-weight:800;font-size:12px}.history-modal-foot{padding:0 12px 12px;display:flex;justify-content:flex-end}
+.saved-elev-wrap{margin:8px 0 14px}.saved-elev-btn{width:100%;border:0;border-radius:12px;padding:12px 14px;background:#eef5fc;color:#174f80;font-weight:800;font-size:14px;box-shadow:inset 0 0 0 1px #d6e6f5}.history-modal-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #e4edf6;background:#f8fbff}.history-modal-title{font-weight:900;color:#123d69}.history-close,.history-clear{border:0;border-radius:10px;padding:8px 10px;font-weight:800;font-size:12px}.history-close{background:#e9f1f8;color:#204c72}.history-clear{background:#f3f5f7;color:#556979}.history-list{display:grid;gap:8px;padding:12px}.history-empty{padding:18px;color:#6c7f92;font-size:13px}.history-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#f7fbff;border:1px solid #dceafb;border-radius:12px;padding:10px 12px}.history-value{font-size:20px;font-weight:900;color:#0d4f8b}.history-meta{font-size:11px;color:#73879a;margin-top:2px}.history-use{border:0;border-radius:10px;padding:8px 10px;background:#1769aa;color:white;font-weight:800;font-size:12px}.history-modal-foot{padding:0 12px 12px;display:flex;justify-content:flex-end}
+
+.version-badge{
+  position:absolute;top:10px;right:12px;z-index:20;
+  font-size:11px;font-weight:800;letter-spacing:.04em;
+  color:#315b7d;background:rgba(255,255,255,.86);
+  border:1px solid rgba(49,91,125,.18);
+  border-radius:999px;padding:5px 8px;
+  backdrop-filter:blur(6px);
+}
+
+
+.history-overlay{
+  position:fixed;inset:0;z-index:9999;
+  display:none;align-items:flex-end;justify-content:center;
+  background:rgba(10,28,48,.45);padding:12px;
+}
+.history-overlay.open{display:flex}
+.history-sheet{
+  width:min(100%,460px);max-height:78vh;overflow:auto;
+  background:#fff;border-radius:18px;
+  box-shadow:0 18px 55px rgba(0,0,0,.25);
+}
+
 </style>
 </head>
 <body>
+<div class="version-badge">v1.12</div>
 <div class="wrap">
   <header>
     <div class="brand">
@@ -121,7 +145,7 @@
     <div class="info">「ーーー」は標高差が規定範囲外であることを示します。一般SGはFISレベル基準の「7%以上」のため、上限ではなく最低方向転換数を表示します。基準：FIS ICR July 2026。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>SnowTech Gate Calculator v1.11</footer>
+  <footer>SnowTech Gate Calculator v1.12</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -151,7 +175,7 @@ const DEFAULTS = {
     generalFemale:{minElev:350,maxElev:600,minPct:7,maxPct:null,plusMinus:0,rule:'minimum'}
   }
 };
-const STORAGE_KEY='snowtech-config-v1.11';
+const STORAGE_KEY='snowtech-config-v1.12';
 let config = loadConfig();
 const elevation = document.getElementById('elevation'); const tbody=document.getElementById('tbody');
 function clone(o){return JSON.parse(JSON.stringify(o))}
@@ -266,7 +290,7 @@ function renderGpsHistory(){
   const v=loadGpsHistory();
   if(!v.length){box.innerHTML='<div class="history-empty">まだGPS計測履歴はありません。</div>';return}
   box.innerHTML='<div class="history-list">'+v.map((x,i)=>`<div class="history-item"><div><div class="history-value">${Math.round(x.diff)} m</div><div class="history-meta">スタート ${Math.round(x.startAlt)}m / ゴール ${Math.round(x.goalAlt)}m ・ ${new Date(x.time).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div><button class="history-use" type="button" data-hi="${i}">入力に使う</button></div>`).join('')+'</div>';
-  box.querySelectorAll('[data-hi]').forEach(b=>b.onclick=()=>{const x=loadGpsHistory()[Number(b.dataset.hi)];if(!x)return;elevation.value=Math.round(x.diff);render();const d=document.getElementById('gpsHistoryDialog');if(d?.open)d.close();});
+  box.querySelectorAll('[data-hi]').forEach(b=>b.onclick=()=>{const x=loadGpsHistory()[Number(b.dataset.hi)];if(!x)return;elevation.value=Math.round(x.diff);render();closeGpsHistory();});
 }
 
 let startGpsAltitude=null, goalGpsAltitude=null;
@@ -342,7 +366,32 @@ const gpsHistoryDialog=document.getElementById('gpsHistoryDialog');
 const openGpsHistoryBtn=document.getElementById('openGpsHistory');
 const closeGpsHistoryBtn=document.getElementById('closeGpsHistory');
 const clearGpsHistoryBtn=document.getElementById('clearGpsHistory');
-if(openGpsHistoryBtn) openGpsHistoryBtn.onclick=()=>{renderGpsHistory();gpsHistoryDialog?.showModal();};
+
+function openGpsHistory(){
+  renderGpsHistory();
+  if(gpsHistoryDialog){
+    gpsHistoryDialog.classList.add('open');
+    gpsHistoryDialog.setAttribute('aria-hidden','false');
+  }
+}
+function closeGpsHistory(){
+  if(gpsHistoryDialog){
+    gpsHistoryDialog.classList.remove('open');
+    gpsHistoryDialog.setAttribute('aria-hidden','true');
+  }
+}
+if(openGpsHistoryBtn) openGpsHistoryBtn.addEventListener('click',openGpsHistory);
+if(closeGpsHistoryBtn) closeGpsHistoryBtn.addEventListener('click',closeGpsHistory);
+if(clearGpsHistoryBtn) clearGpsHistoryBtn.addEventListener('click',()=>{
+  localStorage.removeItem(GPS_HISTORY_KEY);
+  renderGpsHistory();
+});
+if(gpsHistoryDialog){
+  gpsHistoryDialog.addEventListener('click',(e)=>{
+    if(e.target===gpsHistoryDialog) closeGpsHistory();
+  });
+}
+renderGpsHistory();gpsHistoryDialog?.showModal();};
 if(closeGpsHistoryBtn) closeGpsHistoryBtn.onclick=()=>gpsHistoryDialog?.close();
 if(clearGpsHistoryBtn) clearGpsHistoryBtn.onclick=()=>{localStorage.removeItem(GPS_HISTORY_KEY);renderGpsHistory();};
 renderGpsHistory();
@@ -350,5 +399,5 @@ renderGpsHistory();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 </script>
 
-<dialog id="gpsHistoryDialog" class="history-modal"><div class="history-modal-head"><div class="history-modal-title">取得済みの標高差</div><button id="closeGpsHistory" class="history-close" type="button">閉じる</button></div><div id="gpsHistory"></div><div class="history-modal-foot"><button id="clearGpsHistory" class="history-clear" type="button">履歴を消去</button></div></dialog>
+<div id="gpsHistoryDialog" class="history-overlay" aria-hidden="true"><div class="history-sheet"><div class="history-modal-head"><div class="history-modal-title">取得済みの標高差</div><button id="closeGpsHistory" class="history-close" type="button">閉じる</button></div><div id="gpsHistory"></div><div class="history-modal-foot"><button id="clearGpsHistory" class="history-clear" type="button">履歴を消去</button></div></div></div>
 </body></html>
