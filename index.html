@@ -59,14 +59,9 @@
     footer{text-align:center;color:#7c91a5;font-size:11px;padding:18px 0 2px}
     @media (max-width:520px){.brand-name{font-size:34px}.brand-mark{width:48px;height:48px}.input-row{grid-template-columns:86px 1fr 32px}.input-label{font-size:17px}#elevation{font-size:40px}.discipline{font-size:17px}.result{font-size:25px}.percent{font-size:13px}th{font-size:16px}th,td{padding:14px 5px}.range-note{font-size:11px}}
   
-.history-card{margin-top:14px;background:rgba(255,255,255,.94);border:1px solid rgba(45,107,180,.18);border-radius:16px;padding:14px}
-.history-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-.history-title{font-weight:800;font-size:15px;color:#123d69}.history-clear{border:0;background:#eef4fb;color:#315d87;border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700}
-.history-empty{font-size:13px;color:#6c7f92;padding:6px 0}.history-list{display:grid;gap:8px}
-.history-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#f7fbff;border:1px solid #dceafb;border-radius:12px;padding:10px 12px}
-.history-value{font-size:20px;font-weight:900;color:#0d4f8b}.history-meta{font-size:11px;color:#73879a;margin-top:2px}
-.history-use{border:0;border-radius:10px;padding:8px 10px;background:#1769aa;color:white;font-weight:800;font-size:12px}
 
+
+.saved-elev-wrap{margin:8px 0 14px}.saved-elev-btn{width:100%;border:0;border-radius:12px;padding:12px 14px;background:#eef5fc;color:#174f80;font-weight:800;font-size:14px;box-shadow:inset 0 0 0 1px #d6e6f5}.history-modal{border:0;border-radius:18px;padding:0;width:min(92vw,460px);box-shadow:0 18px 55px rgba(0,0,0,.25);overflow:hidden}.history-modal::backdrop{background:rgba(10,28,48,.45)}.history-modal-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #e4edf6;background:#f8fbff}.history-modal-title{font-weight:900;color:#123d69}.history-close,.history-clear{border:0;border-radius:10px;padding:8px 10px;font-weight:800;font-size:12px}.history-close{background:#e9f1f8;color:#204c72}.history-clear{background:#f3f5f7;color:#556979}.history-list{display:grid;gap:8px;padding:12px}.history-empty{padding:18px;color:#6c7f92;font-size:13px}.history-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#f7fbff;border:1px solid #dceafb;border-radius:12px;padding:10px 12px}.history-value{font-size:20px;font-weight:900;color:#0d4f8b}.history-meta{font-size:11px;color:#73879a;margin-top:2px}.history-use{border:0;border-radius:10px;padding:8px 10px;background:#1769aa;color:white;font-weight:800;font-size:12px}.history-modal-foot{padding:0 12px 12px;display:flex;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -78,7 +73,7 @@
         <circle cx="26" cy="68" r="7" fill="#102f55"/>
         <path d="M27 73c11 0 17-11 23-17M26 72l-12 12M32 75l20 8" stroke="#102f55" stroke-width="5" stroke-linecap="round"/>
       </svg>
-      <div><div class="brand-name">Snow<span>Tech</span></div><div class="tag">SKI FOR A BETTER TOMORROW</div></div>
+      <div><div class="tag">SKI FOR A BETTER TOMORROW</div></div>
     </div>
   </header>
 
@@ -86,6 +81,7 @@
     <div class="input-title">標高差を入力してください</div>
     <div class="input-row">
       <div class="input-label">標高差</div>
+<div class="saved-elev-wrap"><button id="openGpsHistory" class="saved-elev-btn" type="button">取得済みの標高差</button></div>
       <input id="elevation" inputmode="decimal" type="number" min="0" step="1" placeholder="250" />
       <div class="unit">m</div>
     </div>
@@ -113,13 +109,6 @@
   <section class="card">
     <div class="results-title">方向転換数<div class="sub">標高差に応じてユース・一般の規定範囲を表示します。</div></div>
     
-<div class="history-card">
-  <div class="history-head">
-    <div class="history-title">計測済みの標高差</div>
-    <button class="history-clear" id="clearGpsHistory" type="button">履歴を消去</button>
-  </div>
-  <div id="gpsHistory"></div>
-</div>
 
 <table>
       <thead><tr><th class="th-discipline">種目</th><th class="th-youth">ユース</th><th class="th-general">一般</th></tr></thead>
@@ -128,7 +117,7 @@
     <div class="info">「ーーー」は標高差が規定範囲外であることを示します。一般SGはFISレベル基準の「7%以上」のため、上限ではなく最低方向転換数を表示します。基準：FIS ICR July 2026。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>SnowTech Gate Calculator v1.7</footer>
+  <footer>SnowTech Gate Calculator v1.9</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -158,7 +147,7 @@ const DEFAULTS = {
     generalFemale:{minElev:350,maxElev:600,minPct:7,maxPct:null,plusMinus:0,rule:'minimum'}
   }
 };
-const STORAGE_KEY='snowtech-config-v1.7';
+const STORAGE_KEY='snowtech-config-v1.9';
 let config = loadConfig();
 const elevation = document.getElementById('elevation'); const tbody=document.getElementById('tbody');
 function clone(o){return JSON.parse(JSON.stringify(o))}
@@ -243,7 +232,7 @@ function settingsHtml(){
 
 const GPS_HISTORY_KEY='snowtech-gps-history-v1';
 function loadGpsHistory(){try{const v=JSON.parse(localStorage.getItem(GPS_HISTORY_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
-function saveGpsHistory(v){localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(v.slice(0,30)))}
+function saveGpsHistory(v){localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(v.slice(0,5)))}
 function addGpsHistory(diff,startAlt,goalAlt){
   const v=loadGpsHistory(); v.unshift({diff:Number(diff),startAlt:Number(startAlt),goalAlt:Number(goalAlt),time:new Date().toISOString()});
   saveGpsHistory(v); renderGpsHistory();
@@ -253,8 +242,7 @@ function renderGpsHistory(){
   const v=loadGpsHistory();
   if(!v.length){box.innerHTML='<div class="history-empty">まだGPS計測履歴はありません。</div>';return}
   box.innerHTML='<div class="history-list">'+v.map((x,i)=>`<div class="history-item"><div><div class="history-value">${Math.round(x.diff)} m</div><div class="history-meta">スタート ${Math.round(x.startAlt)}m / ゴール ${Math.round(x.goalAlt)}m ・ ${new Date(x.time).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div><button class="history-use" type="button" data-hi="${i}">入力に使う</button></div>`).join('')+'</div>';
-  box.querySelectorAll('[data-hi]').forEach(b=>b.onclick=()=>{const x=loadGpsHistory()[Number(b.dataset.hi)];if(!x)return;elevation.value=Math.round(x.diff);render();
-      addGpsHistory(Number(elevation.value),startGpsAltitude,goalGpsAltitude);});
+  box.querySelectorAll('[data-hi]').forEach(b=>b.onclick=()=>{const x=loadGpsHistory()[Number(b.dataset.hi)];if(!x)return;elevation.value=Math.round(x.diff);render();const d=document.getElementById('gpsHistoryDialog');if(d?.open)d.close();});
 }
 
 let startGpsAltitude=null, goalGpsAltitude=null;
@@ -326,10 +314,17 @@ document.getElementById('resetBtn').onclick=()=>{config=clone(DEFAULTS);saveConf
 document.getElementById('clearBtn').onclick=()=>{elevation.value='';startGpsAltitude=null;goalGpsAltitude=null;startAltEl.textContent='未取得';goalAltEl.textContent='未取得';startMetaEl.textContent='';goalMetaEl.textContent='';gpsStatusEl.textContent='※GPS標高は端末・受信状況により誤差が出ます。手入力も引き続き使用できます。';updateGpsDifference();render();elevation.focus()};
 elevation.addEventListener('input',render); render();
 
+const gpsHistoryDialog=document.getElementById('gpsHistoryDialog');
+const openGpsHistoryBtn=document.getElementById('openGpsHistory');
+const closeGpsHistoryBtn=document.getElementById('closeGpsHistory');
 const clearGpsHistoryBtn=document.getElementById('clearGpsHistory');
+if(openGpsHistoryBtn) openGpsHistoryBtn.onclick=()=>{renderGpsHistory();gpsHistoryDialog?.showModal();};
+if(closeGpsHistoryBtn) closeGpsHistoryBtn.onclick=()=>gpsHistoryDialog?.close();
 if(clearGpsHistoryBtn) clearGpsHistoryBtn.onclick=()=>{localStorage.removeItem(GPS_HISTORY_KEY);renderGpsHistory();};
 renderGpsHistory();
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 </script>
+
+<dialog id="gpsHistoryDialog" class="history-modal"><div class="history-modal-head"><div class="history-modal-title">取得済みの標高差</div><button id="closeGpsHistory" class="history-close" type="button">閉じる</button></div><div id="gpsHistory"></div><div class="history-modal-foot"><button id="clearGpsHistory" class="history-clear" type="button">履歴を消去</button></div></dialog>
 </body></html>
