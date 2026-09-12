@@ -81,8 +81,7 @@
     <div class="input-title">標高差を入力してください</div>
     <div class="input-row">
       <div class="input-label">標高差</div>
-<div class="saved-elev-wrap"><button id="openGpsHistory" class="saved-elev-btn" type="button">取得済みの標高差</button></div>
-      <input id="elevation" inputmode="decimal" type="number" min="0" step="1" placeholder="250" />
+<input id="elevation" inputmode="decimal" type="number" min="0" step="1" placeholder="250" />
       <div class="unit">m</div>
     </div>
     <div class="gps-box">
@@ -100,6 +99,11 @@
           <div class="gps-meta" id="goalMeta"></div>
           <button class="gps-btn" id="goalGpsBtn">現在地を取得</button>
         </div>
+
+<div class="saved-elev-wrap">
+  <button id="openGpsHistory" class="saved-elev-btn" type="button">取得済みの標高差</button>
+</div>
+
       </div>
       <div class="gps-diff" id="gpsDiff">スタートとゴールを取得すると、標高差を自動入力します。</div>
       <div class="gps-status" id="gpsStatus">※GPS標高は端末・受信状況により誤差が出ます。手入力も引き続き使用できます。</div>
@@ -117,7 +121,7 @@
     <div class="info">「ーーー」は標高差が規定範囲外であることを示します。一般SGはFISレベル基準の「7%以上」のため、上限ではなく最低方向転換数を表示します。基準：FIS ICR July 2026。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>SnowTech Gate Calculator v1.9</footer>
+  <footer>SnowTech Gate Calculator v1.10</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -147,7 +151,7 @@ const DEFAULTS = {
     generalFemale:{minElev:350,maxElev:600,minPct:7,maxPct:null,plusMinus:0,rule:'minimum'}
   }
 };
-const STORAGE_KEY='snowtech-config-v1.9';
+const STORAGE_KEY='snowtech-config-v1.10';
 let config = loadConfig();
 const elevation = document.getElementById('elevation'); const tbody=document.getElementById('tbody');
 function clone(o){return JSON.parse(JSON.stringify(o))}
