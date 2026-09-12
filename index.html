@@ -121,7 +121,7 @@
     <div class="info">「ーーー」は標高差が規定範囲外であることを示します。一般SGはFISレベル基準の「7%以上」のため、上限ではなく最低方向転換数を表示します。基準：FIS ICR July 2026。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>SnowTech Gate Calculator v1.10</footer>
+  <footer>SnowTech Gate Calculator v1.11</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -151,7 +151,7 @@ const DEFAULTS = {
     generalFemale:{minElev:350,maxElev:600,minPct:7,maxPct:null,plusMinus:0,rule:'minimum'}
   }
 };
-const STORAGE_KEY='snowtech-config-v1.10';
+const STORAGE_KEY='snowtech-config-v1.11';
 let config = loadConfig();
 const elevation = document.getElementById('elevation'); const tbody=document.getElementById('tbody');
 function clone(o){return JSON.parse(JSON.stringify(o))}
@@ -235,11 +235,31 @@ function settingsHtml(){
 }
 
 const GPS_HISTORY_KEY='snowtech-gps-history-v1';
+
+const DEMO_GPS_HISTORY=[
+  {diff:120,startAlt:780,goalAlt:660,time:'2026-09-12T00:10:00.000Z'},
+  {diff:185,startAlt:1020,goalAlt:835,time:'2026-09-12T00:05:00.000Z'},
+  {diff:250,startAlt:1340,goalAlt:1090,time:'2026-09-11T23:55:00.000Z'},
+  {diff:320,startAlt:1580,goalAlt:1260,time:'2026-09-11T23:45:00.000Z'},
+  {diff:410,startAlt:1920,goalAlt:1510,time:'2026-09-11T23:35:00.000Z'}
+];
+function ensureDemoGpsHistory(){
+  try{
+    const existing=JSON.parse(localStorage.getItem(GPS_HISTORY_KEY)||'[]');
+    if(!Array.isArray(existing) || existing.length===0){
+      localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(DEMO_GPS_HISTORY));
+    }
+  }catch(e){
+    localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(DEMO_GPS_HISTORY));
+  }
+}
+
 function loadGpsHistory(){try{const v=JSON.parse(localStorage.getItem(GPS_HISTORY_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
 function saveGpsHistory(v){localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(v.slice(0,5)))}
 function addGpsHistory(diff,startAlt,goalAlt){
   const v=loadGpsHistory(); v.unshift({diff:Number(diff),startAlt:Number(startAlt),goalAlt:Number(goalAlt),time:new Date().toISOString()});
-  saveGpsHistory(v); renderGpsHistory();
+  saveGpsHistory(v); ensureDemoGpsHistory();
+renderGpsHistory();
 }
 function renderGpsHistory(){
   const box=document.getElementById('gpsHistory'); if(!box)return;
