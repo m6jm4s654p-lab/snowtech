@@ -72,7 +72,7 @@
 </style>
 </head>
 <body>
-<div class="version-badge">v1.15</div>
+<div class="version-badge">v1.16</div>
 <div class="wrap">
   <header>
     <div class="brand">
@@ -129,7 +129,7 @@
     <div class="info">「ーーー」は標高差が規定範囲外であることを示します。一般SGはFISレベル基準の「7%以上」のため、上限ではなく最低方向転換数を表示します。基準：FIS ICR July 2026。</div>
     <div class="actions"><button class="primary" id="settingsBtn">⚙ 設定</button><button class="secondary" id="clearBtn">↻ 入力をクリア</button></div>
   </section>
-  <footer>TechBit Gate Calculator v1.15</footer>
+  <footer>TechBit Gate Calculator v1.16</footer>
 </div>
 
 <dialog id="settingsDialog">
@@ -265,10 +265,53 @@ function ensureDemoGpsHistory(){
 
 function loadGpsHistory(){try{const v=JSON.parse(localStorage.getItem(GPS_HISTORY_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
 function saveGpsHistory(v){localStorage.setItem(GPS_HISTORY_KEY,JSON.stringify(v.slice(0,5)))}
-function addGpsHistory(diff,startAlt,goalAlt){
-  let v=loadGpsHistory().filter(x=>!x.demo);
-  v.unshift({diff:Number(diff),startAlt:Number(startAlt),goalAlt:Number(goalAlt),time:new Date().toISOString()});
-  saveGpsHistory(v); renderGpsHistory();
+function addGpsHistory(diff,startAlt,goalAlt,startPos=null,goalPos=null){
+  const items=loadGpsHistory();
+  const now=Date.now();
+  const normalizedDiff=Math.round(Number(diff));
+
+  // Same elevation difference as newest saved item -> do not save.
+  if(items.length && Math.round(Number(items[0].diff))===normalizedDiff){
+    return {saved:false,reason:'same-diff'};
+  }
+
+  // Same place within 1 minute -> do not save.
+  // Same place = both start and goal coordinates within 30m.
+  const newest=items[0];
+  if(newest && newest.time){
+    const age=now-new Date(newest.time).getTime();
+    if(age < 60000 && startPos && goalPos &&
+       newest.startLat!=null && newest.startLon!=null &&
+       newest.goalLat!=null && newest.goalLon!=null){
+      const distance=(lat1,lon1,lat2,lon2)=>{
+        const R=6371000;
+        const p1=lat1*Math.PI/180, p2=lat2*Math.PI/180;
+        const dp=(lat2-lat1)*Math.PI/180;
+        const dl=(lon2-lon1)*Math.PI/180;
+        const a=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+        return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+      };
+      const startDist=distance(startPos.latitude,startPos.longitude,newest.startLat,newest.startLon);
+      const goalDist=distance(goalPos.latitude,goalPos.longitude,newest.goalLat,newest.goalLon);
+      if(startDist<=30 && goalDist<=30){
+        return {saved:false,reason:'same-place-under-1min'};
+      }
+    }
+  }
+
+  items.unshift({
+    diff:normalizedDiff,
+    startAlt:Number(startAlt),
+    goalAlt:Number(goalAlt),
+    startLat:startPos?.latitude ?? null,
+    startLon:startPos?.longitude ?? null,
+    goalLat:goalPos?.latitude ?? null,
+    goalLon:goalPos?.longitude ?? null,
+    time:new Date(now).toISOString()
+  });
+  saveGpsHistory(items);
+  renderGpsHistory();
+  return {saved:true};
 }
 function renderGpsHistory(){
   const box=document.getElementById('gpsHistory'); if(!box)return;
