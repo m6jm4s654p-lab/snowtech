@@ -1,4 +1,4 @@
-const CACHE='snowtech-v1.14';
+const CACHE='snowtech-v1.15';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg'];
 
 self.addEventListener('install',event=>{
